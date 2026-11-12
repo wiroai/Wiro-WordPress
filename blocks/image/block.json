@@ -1,0 +1,30 @@
+{
+	"$schema": "https://schemas.wp.org/trunk/block.json",
+	"apiVersion": 3,
+	"name": "wiro-ai/image",
+	"version": "1.0.0",
+	"title": "Wiro AI Image",
+	"category": "media",
+	"description": "Generate an image with a Wiro AI model. When it is ready, it is saved to the Media Library and the block turns into an Image block.",
+	"keywords": [ "ai", "image", "generate", "picture", "wiro" ],
+	"textdomain": "wiro-ai",
+	"attributes": {
+		"prompt": {
+			"type": "string",
+			"default": ""
+		},
+		"model": {
+			"type": "string",
+			"default": ""
+		},
+		"ratio": {
+			"type": "string",
+			"default": ""
+		}
+	},
+	"supports": {
+		"html": false,
+		"reusable": false
+	},
+	"editorScript": "file:./index.js"
+}

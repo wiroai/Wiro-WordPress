@@ -1,0 +1,14 @@
+{
+	"name": "wiro-wordpress",
+	"private": true,
+	"description": "Development tools for the Wiro AI WordPress plugin. The plugin itself has no build step.",
+	"license": "GPL-2.0-or-later",
+	"scripts": {
+		"lint:js": "eslint ."
+	},
+	"devDependencies": {
+		"@eslint/js": "^10.0.1",
+		"eslint": "^10.14.0",
+		"globals": "^17.14.0"
+	}
+}

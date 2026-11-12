@@ -1,0 +1,33 @@
+{
+	"name": "wiroai/wiro-wordpress",
+	"description": "Wiro AI for WordPress: generate featured images and in-post images in the block editor with Wiro AI image models.",
+	"type": "wordpress-plugin",
+	"license": "GPL-2.0-or-later",
+	"homepage": "https://github.com/wiroai/Wiro-WordPress",
+	"support": {
+		"issues": "https://github.com/wiroai/Wiro-WordPress/issues",
+		"docs": "https://wiro.ai/docs"
+	},
+	"require": {
+		"php": ">=7.4"
+	},
+	"require-dev": {
+		"dealerdirect/phpcodesniffer-composer-installer": "^1.0",
+		"phpcompatibility/phpcompatibility-wp": "^2.1",
+		"phpunit/phpunit": "^9.6",
+		"wp-coding-standards/wpcs": "^3.1"
+	},
+	"config": {
+		"allow-plugins": {
+			"dealerdirect/phpcodesniffer-composer-installer": true
+		},
+		"platform": {
+			"php": "7.4.33"
+		},
+		"sort-packages": true
+	},
+	"scripts": {
+		"lint": "phpcs",
+		"test": "phpunit"
+	}
+}
