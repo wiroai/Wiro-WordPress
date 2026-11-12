@@ -10,7 +10,7 @@ if ( ! defined( 'ABSPATH' ) ) {
 }
 
 /**
- * Settings, Wiro AI: API key, default model, aspect ratio and prompt template.
+ * Settings > Wiro AI: API key, default model, aspect ratio and prompt template.
  */
 class Wiro_AI_Settings {
 
@@ -151,7 +151,7 @@ class Wiro_AI_Settings {
 	}
 
 	/**
-	 * Adds Settings, Wiro AI.
+	 * Adds Settings > Wiro AI.
 	 */
 	public function add_page() {
 		add_options_page(
@@ -450,7 +450,7 @@ class Wiro_AI_Settings {
 		<div class="wrap">
 			<h1><?php esc_html_e( 'Wiro AI', 'wiro-ai' ); ?></h1>
 			<?php if ( is_array( $result ) && isset( $result['ok'], $result['message'] ) ) : ?>
-				<div class="notice <?php echo $result['ok'] ? 'notice-success' : 'notice-error'; ?> is-dismissible">
+				<div class="notice <?php echo esc_attr( $result['ok'] ? 'notice-success' : 'notice-error' ); ?> is-dismissible">
 					<p><?php echo esc_html( $result['message'] ); ?></p>
 				</div>
 			<?php endif; ?>

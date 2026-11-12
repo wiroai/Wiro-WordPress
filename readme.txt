@@ -38,7 +38,7 @@ The plugin is free. You need a Wiro AI account, and each image is billed to your
 
 1. In your WordPress admin, go to Plugins, Add New, search for "Wiro AI", then install and activate it.
 2. Create a project at [wiro.ai/panel/project/new](https://wiro.ai/panel/project/new) and copy its API key. If you choose signature authentication, copy the API secret too.
-3. Go to Settings, Wiro AI, paste the key and save. Click "Check connection" to confirm it works.
+3. Go to Settings > Wiro AI, paste the key and save. Click "Check connection" to confirm it works.
 4. Open a post, open the Post sidebar and find the "Wiro AI featured image" panel, or add a "Wiro AI Image" block to the post.
 
 To keep the key out of the database, add it to wp-config.php instead:
@@ -53,7 +53,7 @@ For signature-based projects, also add:
 
 = Do I need a Wiro AI account? =
 
-Yes. Sign up at [wiro.ai](https://wiro.ai), create a project and paste its API key into Settings, Wiro AI. Images are billed to that project.
+Yes. Sign up at [wiro.ai](https://wiro.ai), create a project and paste its API key into Settings > Wiro AI. Images are billed to that project.
 
 = Which models can I use? =
 
@@ -90,7 +90,7 @@ The plugin is free. Each image costs what the model's page on [wiro.ai/models](h
 1. The Wiro AI featured image panel in the Post sidebar, with a prompt built from the post title.
 2. The generated image, saved to the Media Library and set as the featured image.
 3. The Wiro AI Image block in a post.
-4. Settings, Wiro AI.
+4. Settings > Wiro AI.
 
 == External services ==
 

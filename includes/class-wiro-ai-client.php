@@ -137,7 +137,7 @@ class Wiro_AI_Client {
 	 */
 	private function post( $path, array $body, $timeout = 20 ) {
 		if ( '' === $this->api_key ) {
-			return new WP_Error( 'wiro_ai_no_key', __( 'Add your Wiro AI API key in Settings, Wiro AI.', 'wiro-ai' ), array( 'status' => 400 ) );
+			return new WP_Error( 'wiro_ai_no_key', __( 'Add your Wiro AI API key in Settings > Wiro AI.', 'wiro-ai' ), array( 'status' => 400 ) );
 		}
 
 		$response = wp_remote_post(
@@ -227,7 +227,7 @@ class Wiro_AI_Client {
 		} elseif ( in_array( 96, $codes, true ) ) {
 			$text = __( 'Your Wiro AI project is already running as many tasks as it can. Wait for one to finish and try again.', 'wiro-ai' );
 		} elseif ( 401 === $code || 403 === $code || false !== stripos( $text, 'authorization' ) ) {
-			$text = __( 'Wiro AI did not accept the API key. Check the key, and the secret if your project uses signature authentication, in Settings, Wiro AI.', 'wiro-ai' );
+			$text = __( 'Wiro AI did not accept the API key. Check the key, and the secret if your project uses signature authentication, in Settings > Wiro AI.', 'wiro-ai' );
 		} elseif ( '' === $text ) {
 			/* translators: %d: HTTP status code. */
 			$text = sprintf( __( 'The Wiro AI API returned an error (HTTP %d).', 'wiro-ai' ), $code );

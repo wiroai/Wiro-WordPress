@@ -50,7 +50,7 @@
 			Notice,
 			{ status: 'warning', isDismissible: false },
 			__(
-				'Ask a site administrator to add a Wiro AI API key in Settings, Wiro AI.',
+				'Ask a site administrator to add a Wiro AI API key in Settings > Wiro AI.',
 				'wiro-ai'
 			)
 		);

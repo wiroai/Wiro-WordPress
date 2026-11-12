@@ -51,7 +51,7 @@ define( 'WIRO_AI_API_KEY', 'your-api-key' );
 define( 'WIRO_AI_API_SECRET', 'your-api-secret' ); // Only for signature-based projects.
 ```
 
-![Settings, Wiro AI](.wordpress-org/screenshot-4.png)
+![Settings > Wiro AI](.wordpress-org/screenshot-4.png)
 
 ## Models
 

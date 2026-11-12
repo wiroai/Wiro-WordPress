@@ -171,7 +171,7 @@ class Wiro_AI_REST {
 	 */
 	public function create_task( $request ) {
 		if ( ! Wiro_AI_Settings::has_key() ) {
-			return new WP_Error( 'wiro_ai_no_key', __( 'Add your Wiro AI API key in Settings, Wiro AI.', 'wiro-ai' ), array( 'status' => 400 ) );
+			return new WP_Error( 'wiro_ai_no_key', __( 'Add your Wiro AI API key in Settings > Wiro AI.', 'wiro-ai' ), array( 'status' => 400 ) );
 		}
 
 		$model = (string) $request->get_param( 'model' );
