@@ -152,12 +152,6 @@ final class Wiro_AI_Models {
 	/**
 	 * Builds the Run parameters for a text-to-image request.
 	 *
-	 * Wiro AI rejects a run that leaves out a required setting, so required
-	 * menus, numbers and checkboxes get the model's default value. Text, JSON
-	 * and file fields are never filled in, because their defaults are samples.
-	 * The aspect ratio goes to the model's ratio menu when it has one, or to
-	 * its width and height fields.
-	 *
 	 * @param array  $items  Parameter fields from parameter_items(). Empty when unknown.
 	 * @param string $prompt Prompt text.
 	 * @param string $ratio  Aspect ratio such as "16:9".
@@ -165,6 +159,36 @@ final class Wiro_AI_Models {
 	 * @return array<string, mixed>
 	 */
 	public static function build_params( array $items, $prompt, $ratio, array $preset = array() ) {
+		return self::build_run_params(
+			$items,
+			array(
+				'prompt' => (string) $prompt,
+				'ratio'  => (string) $ratio,
+			),
+			$preset
+		);
+	}
+
+	/**
+	 * Builds the Run parameters of any task from common values.
+	 *
+	 * Wiro AI rejects a run that leaves out a required setting, so required
+	 * menus, numbers and checkboxes get the model's default value. Text, JSON
+	 * and file fields are never filled in, because their defaults are samples.
+	 * The common values then go to the fields the model has for them:
+	 *
+	 * - prompt: the prompt field (or the first required text area);
+	 * - ratio: the ratio menu (closest option), or width and height;
+	 * - image_url: the first image field, in the form its type expects;
+	 * - voice: the voice menu, when the value is one of its options;
+	 * - scale: the upscale factor field.
+	 *
+	 * @param array $items  Parameter fields from parameter_items(). Empty when unknown.
+	 * @param array $values Common values: prompt, ratio, image_url, voice, scale.
+	 * @param array $preset Values to send to this model on every request.
+	 * @return array<string, mixed>
+	 */
+	public static function build_run_params( array $items, array $values, array $preset = array() ) {
 		$params = array();
 		$by_id  = array();
 		foreach ( $items as $item ) {
@@ -200,20 +224,146 @@ final class Wiro_AI_Models {
 			$params[ $key ] = $value;
 		}
 
-		$ratio_item = self::find_ratio_item( $items );
-		if ( null !== $ratio_item ) {
-			$choice = self::closest_ratio( $ratio, $ratio_item['options'] );
-			if ( '' !== $choice ) {
-				$params[ $ratio_item['id'] ] = $choice;
+		$ratio = isset( $values['ratio'] ) ? (string) $values['ratio'] : '';
+		if ( '' !== $ratio ) {
+			$ratio_item = self::find_ratio_item( $items );
+			if ( null !== $ratio_item ) {
+				$choice = self::closest_ratio( $ratio, $ratio_item['options'] );
+				if ( '' !== $choice ) {
+					$params[ $ratio_item['id'] ] = $choice;
+				}
+			} elseif ( isset( $by_id['width'], $by_id['height'] ) ) {
+				$size             = self::dimensions( $ratio );
+				$params['width']  = $size[0];
+				$params['height'] = $size[1];
 			}
-		} elseif ( isset( $by_id['width'], $by_id['height'] ) ) {
-			$size             = self::dimensions( $ratio );
-			$params['width']  = $size[0];
-			$params['height'] = $size[1];
 		}
 
-		$params['prompt'] = (string) $prompt;
+		$image_url = isset( $values['image_url'] ) ? (string) $values['image_url'] : '';
+		if ( '' !== $image_url ) {
+			$file = self::find_file_item( $items );
+			if ( null === $file ) {
+				$params['inputImage'] = array( $image_url );
+			} elseif ( 'fileinput' === $file['type'] ) {
+				$params[ $file['id'] . 'Url' ] = $image_url;
+			} elseif ( 'multifileinput' === $file['type'] ) {
+				$id                = $file['id'];
+				$url_id            = 'Multiple' === substr( $id, -8 ) ? substr( $id, 0, -8 ) . 'UrlMultiple' : $id . 'UrlMultiple';
+				$params[ $url_id ] = $image_url;
+			} else {
+				$params[ $file['id'] ] = array( $image_url );
+			}
+		}
+
+		$voice = isset( $values['voice'] ) ? (string) $values['voice'] : '';
+		if ( '' !== $voice ) {
+			$voice_item = self::find_named_item( $items, '/^(voice|voiceid|voice_id|speaker|voicename|voice_name)$/i' );
+			if ( null !== $voice_item && ( ! $voice_item['options'] || in_array( $voice, $voice_item['options'], true ) ) ) {
+				$params[ $voice_item['id'] ] = $voice;
+			}
+		}
+
+		$scale = isset( $values['scale'] ) ? (string) $values['scale'] : '';
+		if ( '' !== $scale && is_numeric( $scale ) ) {
+			$scale_item = self::find_named_item( $items, '/^(outscale|upscale|upscalefactor|upscale_factor|scalefactor|scale_factor)$/i' );
+			if ( null !== $scale_item ) {
+				if ( 'select' === $scale_item['type'] ) {
+					if ( in_array( $scale, $scale_item['options'], true ) ) {
+						$params[ $scale_item['id'] ] = $scale;
+					}
+				} else {
+					$params[ $scale_item['id'] ] = 'float' === $scale_item['type'] ? (float) $scale : (int) $scale;
+				}
+			}
+		}
+
+		$prompt = isset( $values['prompt'] ) ? (string) $values['prompt'] : '';
+		if ( '' !== $prompt || ! $items ) {
+			$params[ self::prompt_id( $items ) ] = $prompt;
+		}
 		return $params;
+	}
+
+	/**
+	 * The field that takes the prompt or the text to speak.
+	 *
+	 * @param array $items Parameter fields from parameter_items().
+	 * @return string Parameter ID, "prompt" when the model has no better match.
+	 */
+	public static function prompt_id( array $items ) {
+		$named = self::find_named_item( $items, '/^(prompt|text|script|instruction|instructions|inputtext|input_text)$/i' );
+		if ( null !== $named ) {
+			return $named['id'];
+		}
+		foreach ( $items as $item ) {
+			if ( 'textarea' === $item['type'] && $item['required'] ) {
+				return $item['id'];
+			}
+		}
+		return 'prompt';
+	}
+
+	/**
+	 * The first non-file field whose ID matches a pattern.
+	 *
+	 * @param array  $items   Parameter fields from parameter_items().
+	 * @param string $pattern Regular expression for the ID.
+	 * @return array|null
+	 */
+	public static function find_named_item( array $items, $pattern ) {
+		foreach ( $items as $item ) {
+			if ( in_array( $item['type'], array( 'fileinput', 'combinefileinput', 'multifileinput' ), true ) ) {
+				continue;
+			}
+			if ( preg_match( $pattern, $item['id'] ) ) {
+				return $item;
+			}
+		}
+		return null;
+	}
+
+	/**
+	 * The field that takes the source image: the first file field named for
+	 * an image (not a mask), or else the first file field.
+	 *
+	 * @param array $items Parameter fields from parameter_items().
+	 * @return array|null
+	 */
+	public static function find_file_item( array $items ) {
+		$first = null;
+		foreach ( $items as $item ) {
+			if ( ! in_array( $item['type'], array( 'fileinput', 'combinefileinput', 'multifileinput' ), true ) ) {
+				continue;
+			}
+			if ( null === $first ) {
+				$first = $item;
+			}
+			$id = strtolower( $item['id'] );
+			if ( false !== strpos( $id, 'image' ) && false === strpos( $id, 'mask' ) ) {
+				return $item;
+			}
+		}
+		return $first;
+	}
+
+	/**
+	 * Voice options of a model, when it has a voice menu.
+	 *
+	 * @param array $items Parameter fields from parameter_items().
+	 * @return array{options: string[], default: string}
+	 */
+	public static function voices( array $items ) {
+		$item = self::find_named_item( $items, '/^(voice|voiceid|voice_id|speaker|voicename|voice_name)$/i' );
+		if ( null === $item ) {
+			return array(
+				'options' => array(),
+				'default' => '',
+			);
+		}
+		return array(
+			'options' => $item['options'],
+			'default' => $item['default'],
+		);
 	}
 
 	/**
@@ -309,9 +459,21 @@ final class Wiro_AI_Models {
 	 * @return array{url: string, type: string}|null
 	 */
 	public static function pick_image_output( $outputs ) {
+		return self::pick_output( $outputs, 'image' );
+	}
+
+	/**
+	 * Finds the first output of a kind among a finished task's outputs.
+	 *
+	 * @param mixed  $outputs The "outputs" list of a Task/Detail record.
+	 * @param string $kind    "image" or "audio".
+	 * @return array{url: string, type: string}|null
+	 */
+	public static function pick_output( $outputs, $kind ) {
 		if ( ! is_array( $outputs ) ) {
 			return null;
 		}
+		$extensions = 'audio' === $kind ? array( 'mp3', 'wav', 'm4a', 'ogg', 'aac', 'flac' ) : array( 'png', 'jpg', 'jpeg', 'webp', 'gif' );
 		foreach ( $outputs as $output ) {
 			if ( ! is_array( $output ) || empty( $output['url'] ) || ! is_string( $output['url'] ) ) {
 				continue;
@@ -319,7 +481,7 @@ final class Wiro_AI_Models {
 			$type = isset( $output['contenttype'] ) && is_string( $output['contenttype'] ) ? strtolower( $output['contenttype'] ) : '';
 			$path = (string) parse_url( $output['url'], PHP_URL_PATH ); // phpcs:ignore WordPress.WP.AlternativeFunctions.parse_url_parse_url -- No WordPress functions in this class.
 			$ext  = strtolower( pathinfo( $path, PATHINFO_EXTENSION ) );
-			if ( 0 === strpos( $type, 'image/' ) || in_array( $ext, array( 'png', 'jpg', 'jpeg', 'webp', 'gif' ), true ) ) {
+			if ( 0 === strpos( $type, $kind . '/' ) || in_array( $ext, $extensions, true ) ) {
 				return array(
 					'url'  => $output['url'],
 					'type' => $type,
@@ -371,6 +533,31 @@ final class Wiro_AI_Models {
 			'image/gif'  => 'gif',
 		);
 		return isset( $by_type[ $type ] ) ? $by_type[ $type ] : 'png';
+	}
+
+	/**
+	 * File extension for a downloaded audio file.
+	 *
+	 * @param string $url  Output URL.
+	 * @param string $type Content type reported by Wiro AI.
+	 * @return string
+	 */
+	public static function audio_extension( $url, $type ) {
+		$path = (string) parse_url( (string) $url, PHP_URL_PATH ); // phpcs:ignore WordPress.WP.AlternativeFunctions.parse_url_parse_url -- No WordPress functions in this class.
+		$ext  = strtolower( pathinfo( $path, PATHINFO_EXTENSION ) );
+		if ( in_array( $ext, array( 'mp3', 'wav', 'm4a', 'ogg', 'flac' ), true ) ) {
+			return $ext;
+		}
+		$by_type = array(
+			'audio/mpeg'  => 'mp3',
+			'audio/mp3'   => 'mp3',
+			'audio/wav'   => 'wav',
+			'audio/x-wav' => 'wav',
+			'audio/mp4'   => 'm4a',
+			'audio/ogg'   => 'ogg',
+			'audio/flac'  => 'flac',
+		);
+		return isset( $by_type[ $type ] ) ? $by_type[ $type ] : 'mp3';
 	}
 
 	/**

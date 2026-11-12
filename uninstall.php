@@ -1,7 +1,7 @@
 <?php
 /**
- * Removes the plugin's settings and caches when the plugin is deleted.
- * Generated images stay in the Media Library.
+ * Removes the plugin's settings, usage history and caches when the plugin is
+ * deleted. Images and audio it created stay in the Media Library.
  *
  * @package WiroAI
  */
@@ -11,14 +11,14 @@ if ( ! defined( 'WP_UNINSTALL_PLUGIN' ) ) {
 }
 
 require_once __DIR__ . '/includes/class-wiro-ai-models.php';
+require_once __DIR__ . '/includes/class-wiro-ai-jobs.php';
 
-$wiro_ai_settings = get_option( 'wiro_ai_settings', array() );
-$wiro_ai_slugs    = array_keys( Wiro_AI_Models::catalog() );
-if ( is_array( $wiro_ai_settings ) && ! empty( $wiro_ai_settings['custom_model'] ) && is_string( $wiro_ai_settings['custom_model'] ) ) {
-	$wiro_ai_slugs[] = $wiro_ai_settings['custom_model'];
+Wiro_AI_Jobs::delete_all();
+
+foreach ( array( 'image', 'edit', 'upscale', 'background', 'narration', 'alt', 'text' ) as $wiro_ai_task ) {
+	delete_transient( 'wiro_ai_models_' . $wiro_ai_task );
 }
-foreach ( $wiro_ai_slugs as $wiro_ai_slug ) {
-	delete_transient( 'wiro_ai_model_' . md5( $wiro_ai_slug ) );
-}
+delete_transient( 'wiro_ai_gateway_models' );
 
 delete_option( 'wiro_ai_settings' );
+delete_option( 'wiro_ai_usage_totals' );

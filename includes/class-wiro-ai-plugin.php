@@ -10,7 +10,8 @@ if ( ! defined( 'ABSPATH' ) ) {
 }
 
 /**
- * Wires the settings page, REST routes, editor scripts and block together.
+ * Wires the settings, admin screens, REST routes, editor scripts and block
+ * together.
  */
 final class Wiro_AI_Plugin {
 
@@ -37,40 +38,15 @@ final class Wiro_AI_Plugin {
 	 * Registers the hooks.
 	 */
 	public function init() {
-		( new Wiro_AI_Settings() )->init();
+		$settings = new Wiro_AI_Settings();
+		$settings->init();
+		( new Wiro_AI_Admin() )->init( $settings );
 		( new Wiro_AI_REST() )->init();
+		add_action( 'init', array( 'Wiro_AI_Jobs', 'register' ) );
 		add_action( 'init', array( $this, 'register_assets' ), 5 );
 		add_action( 'init', array( $this, 'register_block' ) );
 		add_action( 'enqueue_block_editor_assets', array( $this, 'enqueue_editor_assets' ) );
-	}
-
-	/**
-	 * Image models offered in the editor.
-	 *
-	 * @param bool $with_custom Whether to add the custom model from the settings.
-	 * @return array<string, array> Models keyed by slug.
-	 */
-	public static function models( $with_custom = false ) {
-		/**
-		 * Filters the image models offered in the editor.
-		 *
-		 * @param array $models Models keyed by owner/project slug. Each has a "label"
-		 *                      and may have "params" sent with every request.
-		 */
-		$models = apply_filters( 'wiro_ai_models', Wiro_AI_Models::catalog() );
-		$models = is_array( $models ) ? $models : Wiro_AI_Models::catalog();
-		foreach ( $models as $slug => $model ) {
-			if ( ! is_array( $model ) || empty( $model['label'] ) || Wiro_AI_Models::normalize_slug( $slug ) !== $slug ) {
-				unset( $models[ $slug ] );
-			}
-		}
-		if ( $with_custom ) {
-			$custom = Wiro_AI_Settings::custom_model();
-			if ( '' !== $custom && ! isset( $models[ $custom ] ) ) {
-				$models[ $custom ] = array( 'label' => $custom );
-			}
-		}
-		return $models;
+		add_action( 'admin_enqueue_scripts', array( $this, 'enqueue_admin_assets' ) );
 	}
 
 	/**
@@ -90,44 +66,41 @@ final class Wiro_AI_Plugin {
 	}
 
 	/**
-	 * Whether the current user may generate images with the site's key.
+	 * Whether the current user may use Wiro AI with the site's key.
 	 *
 	 * @return bool
 	 */
 	public static function current_user_can_generate() {
+		$settings = Wiro_AI_Settings::get();
 		/**
-		 * Filters the capability needed to generate images.
+		 * Filters the capability needed to use Wiro AI.
 		 *
-		 * Images are billed to the site's Wiro AI project, so this decides who
-		 * can spend from it. Users also need to be able to edit the post.
+		 * Requests are billed to the site's Wiro AI project, so this decides
+		 * who can spend from it. Users also need to be able to edit the post
+		 * or image they work on.
 		 *
-		 * @param string $capability Capability. Default "upload_files".
+		 * @param string $capability Capability picked in the settings. Default "upload_files".
 		 */
-		$capability = apply_filters( 'wiro_ai_generate_capability', 'upload_files' );
+		$capability = apply_filters( 'wiro_ai_generate_capability', $settings['access'] );
 		return is_string( $capability ) && '' !== $capability && current_user_can( $capability );
 	}
 
 	/**
-	 * Registers the shared editor script and the sidebar script.
+	 * Registers the scripts and the admin stylesheet.
 	 */
 	public function register_assets() {
-		wp_register_script(
-			'wiro-ai-common',
-			WIRO_AI_URL . 'assets/js/common.js',
-			array( 'wp-api-fetch', 'wp-i18n' ),
-			WIRO_AI_VERSION,
-			array( 'in_footer' => true )
+		$scripts = array(
+			'wiro-ai-common'      => array( 'assets/js/common.js', array( 'wp-api-fetch', 'wp-components', 'wp-element', 'wp-i18n' ) ),
+			'wiro-ai-sidebar'     => array( 'assets/js/sidebar.js', array( 'wiro-ai-common', 'wp-blocks', 'wp-data', 'wp-editor', 'wp-plugins' ) ),
+			'wiro-ai-image-tools' => array( 'assets/js/image-tools.js', array( 'wiro-ai-common', 'wp-block-editor', 'wp-compose', 'wp-data', 'wp-hooks' ) ),
+			'wiro-ai-media-tools' => array( 'assets/js/media-tools.js', array( 'wiro-ai-common', 'wp-dom-ready' ) ),
+			'wiro-ai-bulk'        => array( 'assets/js/bulk.js', array( 'wiro-ai-common', 'wp-dom-ready' ) ),
 		);
-		wp_set_script_translations( 'wiro-ai-common', 'wiro-ai' );
-
-		wp_register_script(
-			'wiro-ai-sidebar',
-			WIRO_AI_URL . 'assets/js/sidebar.js',
-			array( 'wiro-ai-common', 'wp-components', 'wp-data', 'wp-editor', 'wp-element', 'wp-i18n', 'wp-plugins' ),
-			WIRO_AI_VERSION,
-			array( 'in_footer' => true )
-		);
-		wp_set_script_translations( 'wiro-ai-sidebar', 'wiro-ai' );
+		foreach ( $scripts as $handle => $script ) {
+			wp_register_script( $handle, WIRO_AI_URL . $script[0], $script[1], WIRO_AI_VERSION, array( 'in_footer' => true ) );
+			wp_set_script_translations( $handle, 'wiro-ai' );
+		}
+		wp_register_style( 'wiro-ai-admin', WIRO_AI_URL . 'assets/css/admin.css', array( 'wp-components' ), WIRO_AI_VERSION );
 	}
 
 	/**
@@ -138,37 +111,68 @@ final class Wiro_AI_Plugin {
 	}
 
 	/**
-	 * Passes the settings to the editor scripts and adds the sidebar panel
-	 * to post editors whose post type has featured images.
+	 * Editor scripts: settings for every Wiro AI script, the sidebar on post
+	 * editors, and the Image block toolbar tools in every block editor.
 	 */
 	public function enqueue_editor_assets() {
-		wp_add_inline_script( 'wiro-ai-common', 'window.wiroAiData = ' . wp_json_encode( self::editor_data() ) . ';', 'before' );
+		self::add_data();
+		if ( ! self::current_user_can_generate() ) {
+			return;
+		}
+		wp_enqueue_script( 'wiro-ai-image-tools' );
 
 		$screen = function_exists( 'get_current_screen' ) ? get_current_screen() : null;
-		if ( ! $screen || 'post' !== $screen->base || empty( $screen->post_type ) ) {
-			return;
-		}
-		if ( ! post_type_supports( $screen->post_type, 'thumbnail' ) || ! current_theme_supports( 'post-thumbnails', $screen->post_type ) ) {
-			return;
-		}
-		if ( self::current_user_can_generate() ) {
+		if ( $screen && 'post' === $screen->base && ! empty( $screen->post_type ) && post_type_supports( $screen->post_type, 'editor' ) ) {
 			wp_enqueue_script( 'wiro-ai-sidebar' );
 		}
 	}
 
 	/**
-	 * Settings the editor scripts need. Never includes the API key.
+	 * Admin scripts for the bulk screen and the edit screen of images.
+	 *
+	 * @param string $hook_suffix Current admin page.
+	 */
+	public function enqueue_admin_assets( $hook_suffix ) {
+		$screen = function_exists( 'get_current_screen' ) ? get_current_screen() : null;
+		if ( 'wiro-ai_page_wiro-ai-bulk' === $hook_suffix && current_user_can( 'manage_options' ) ) {
+			self::add_data();
+			wp_enqueue_script( 'wiro-ai-bulk' );
+			wp_enqueue_style( 'wiro-ai-admin' );
+			return;
+		}
+		if ( in_array( $hook_suffix, array( 'toplevel_page_wiro-ai', 'wiro-ai_page_wiro-ai-usage' ), true ) ) {
+			wp_enqueue_style( 'wiro-ai-admin' );
+			return;
+		}
+		if ( 'post.php' === $hook_suffix && $screen && 'attachment' === $screen->post_type && self::current_user_can_generate() ) {
+			self::add_data();
+			wp_enqueue_script( 'wiro-ai-media-tools' );
+			wp_enqueue_style( 'wiro-ai-admin' );
+		}
+	}
+
+	/**
+	 * Passes the settings to the scripts, once per page.
+	 */
+	private static function add_data() {
+		static $done = false;
+		if ( $done ) {
+			return;
+		}
+		$done = true;
+		wp_add_inline_script( 'wiro-ai-common', 'window.wiroAiData = ' . wp_json_encode( self::script_data() ) . ';', 'before' );
+	}
+
+	/**
+	 * Settings the scripts need. Never includes the API key.
 	 *
 	 * @return array<string, mixed>
 	 */
-	public static function editor_data() {
+	public static function script_data() {
 		$settings = Wiro_AI_Settings::get();
-		$models   = array();
-		foreach ( self::models( true ) as $slug => $model ) {
-			$models[] = array(
-				'value' => $slug,
-				'label' => (string) $model['label'],
-			);
+		$defaults = array();
+		foreach ( array_keys( Wiro_AI_Catalog::tasks() ) as $task ) {
+			$defaults[ $task ] = Wiro_AI_Catalog::default_model( $task );
 		}
 		$ratios = array();
 		foreach ( self::ratio_labels() as $value => $label ) {
@@ -177,16 +181,21 @@ final class Wiro_AI_Plugin {
 				'label' => $label,
 			);
 		}
+		$screen     = function_exists( 'get_current_screen' ) ? get_current_screen() : null;
+		$thumbnails = $screen && ! empty( $screen->post_type ) && post_type_supports( $screen->post_type, 'thumbnail' ) && current_theme_supports( 'post-thumbnails', $screen->post_type );
 		return array(
-			'hasKey'         => Wiro_AI_Settings::has_key(),
-			'canGenerate'    => self::current_user_can_generate(),
-			'canManage'      => current_user_can( 'manage_options' ),
-			'settingsUrl'    => admin_url( 'options-general.php?page=' . Wiro_AI_Settings::PAGE ),
-			'models'         => $models,
-			'defaultModel'   => Wiro_AI_Settings::default_model(),
-			'ratios'         => $ratios,
-			'defaultRatio'   => $settings['ratio'],
-			'promptTemplate' => $settings['prompt_template'],
+			'hasKey'            => Wiro_AI_Settings::has_key(),
+			'thumbnails'        => (bool) $thumbnails,
+			'canGenerate'       => self::current_user_can_generate(),
+			'canManage'         => current_user_can( 'manage_options' ),
+			'settingsUrl'       => Wiro_AI_Settings::url(),
+			'defaults'          => $defaults,
+			'ratios'            => $ratios,
+			'defaultRatio'      => $settings['ratio'],
+			'promptTemplate'    => $settings['prompt_template'],
+			'narrationPosition' => $settings['narration_position'],
+			'upscaleScale'      => $settings['upscale_scale'],
+			'maxChars'          => 10000,
 		);
 	}
 }

@@ -11,5 +11,5 @@ if ( ! defined( 'ABSPATH' ) ) {
 
 return array(
 	'dependencies' => array( 'wiro-ai-common', 'wp-block-editor', 'wp-blocks', 'wp-components', 'wp-data', 'wp-element', 'wp-i18n' ),
-	'version'      => '1.0.0',
+	'version'      => '1.1.0',
 );

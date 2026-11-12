@@ -268,4 +268,88 @@ final class ModelsTest extends TestCase {
 		$this->assertSame( 'done', Wiro_AI_Models::status_stage( 'task_postprocess_end' ) );
 		$this->assertSame( 'queued', Wiro_AI_Models::status_stage( 'something_new' ) );
 	}
+
+	/**
+	 * Common values go to the fields each model has for them.
+	 */
+	public function test_build_run_params_maps_common_values() {
+		$items  = array(
+			self::item( 'inputImage', 'combinefileinput' ),
+			self::item( 'prompt', 'textarea', true ),
+			self::item( 'voice', 'select', true, 'alice', array( 'alice', 'brian' ) ),
+			self::item( 'outscale', 'float', false, '2.0' ),
+		);
+		$params = Wiro_AI_Models::build_run_params(
+			$items,
+			array(
+				'prompt'    => 'Read this',
+				'image_url' => 'https://cdn1.wiro.ai/a.png',
+				'voice'     => 'brian',
+				'scale'     => '4',
+			)
+		);
+		$this->assertSame( array( 'https://cdn1.wiro.ai/a.png' ), $params['inputImage'] );
+		$this->assertSame( 'brian', $params['voice'] );
+		$this->assertSame( 4.0, $params['outscale'] );
+		$this->assertSame( 'Read this', $params['prompt'] );
+
+		$params = Wiro_AI_Models::build_run_params( $items, array( 'voice' => 'nobody' ) );
+		$this->assertSame( 'alice', $params['voice'] );
+		$this->assertArrayNotHasKey( 'prompt', $params );
+	}
+
+	/**
+	 * File URLs follow the type of the file field.
+	 */
+	public function test_build_run_params_file_types() {
+		$url = 'https://cdn1.wiro.ai/a.png';
+		$this->assertSame( $url, Wiro_AI_Models::build_run_params( array( self::item( 'inputImage', 'fileinput' ) ), array( 'image_url' => $url ) )['inputImageUrl'] );
+		$this->assertSame( $url, Wiro_AI_Models::build_run_params( array( self::item( 'inputImageMultiple', 'multifileinput' ) ), array( 'image_url' => $url ) )['inputImageUrlMultiple'] );
+		$picked = Wiro_AI_Models::build_run_params(
+			array(
+				self::item( 'inputImageMask', 'combinefileinput' ),
+				self::item( 'inputImage', 'combinefileinput' ),
+			),
+			array( 'image_url' => $url )
+		);
+		$this->assertArrayHasKey( 'inputImage', $picked );
+		$this->assertArrayNotHasKey( 'inputImageMask', $picked );
+	}
+
+	/**
+	 * The prompt goes to the field named for it, or the first required text area.
+	 */
+	public function test_prompt_id() {
+		$this->assertSame( 'text', Wiro_AI_Models::prompt_id( array( self::item( 'text', 'textarea', true ) ) ) );
+		$this->assertSame( 'script', Wiro_AI_Models::prompt_id( array( self::item( 'style', 'text' ), self::item( 'script', 'textarea' ) ) ) );
+		$this->assertSame( 'body', Wiro_AI_Models::prompt_id( array( self::item( 'body', 'textarea', true ) ) ) );
+		$this->assertSame( 'prompt', Wiro_AI_Models::prompt_id( array() ) );
+	}
+
+	/**
+	 * Voices come from the voice menu.
+	 */
+	public function test_voices() {
+		$voices = Wiro_AI_Models::voices( array( self::item( 'voice', 'select', true, 'alice', array( 'alice', 'brian' ) ) ) );
+		$this->assertSame( array( 'alice', 'brian' ), $voices['options'] );
+		$this->assertSame( 'alice', $voices['default'] );
+		$this->assertSame( array(), Wiro_AI_Models::voices( array() )['options'] );
+	}
+
+	/**
+	 * Audio outputs are found by type or extension.
+	 */
+	public function test_pick_audio_output() {
+		$outputs = array(
+			array(
+				'contenttype' => 'application/json',
+				'url'         => 'https://cdn1.wiro.ai/a.json',
+			),
+			array( 'url' => 'https://cdn1.wiro.ai/a.mp3' ),
+		);
+		$this->assertSame( 'https://cdn1.wiro.ai/a.mp3', Wiro_AI_Models::pick_output( $outputs, 'audio' )['url'] );
+		$this->assertNull( Wiro_AI_Models::pick_output( $outputs, 'image' ) );
+		$this->assertSame( 'mp3', Wiro_AI_Models::audio_extension( 'https://cdn1.wiro.ai/a', 'audio/mpeg' ) );
+		$this->assertSame( 'wav', Wiro_AI_Models::audio_extension( 'https://cdn1.wiro.ai/a.wav', '' ) );
+	}
 }

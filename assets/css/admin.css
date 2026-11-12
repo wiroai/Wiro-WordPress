@@ -1,0 +1,118 @@
+/* Wiro AI admin screens: bulk images, usage and the Media Library box. */
+
+.wiro-ai-admin .wiro-ai-filter {
+	display: flex;
+	gap: 8px;
+	align-items: center;
+	margin: 16px 0;
+}
+
+.wiro-ai-bulk {
+	max-width: 1100px;
+}
+
+.wiro-ai-bulk-controls {
+	display: grid;
+	grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+	gap: 16px;
+	margin: 16px 0 12px;
+	max-width: 900px;
+}
+
+.wiro-ai-bulk-actions {
+	display: flex;
+	flex-wrap: wrap;
+	gap: 12px;
+	align-items: center;
+	margin: 12px 0 16px;
+}
+
+.wiro-ai-bulk-table td,
+.wiro-ai-bulk-table th {
+	vertical-align: middle;
+}
+
+.wiro-ai-bulk-table .check-column {
+	padding: 8px 0 8px 10px;
+	vertical-align: middle;
+}
+
+.wiro-ai-bulk-table .check-column input {
+	margin: 0;
+}
+
+.wiro-ai-thumb {
+	width: 48px;
+	height: 48px;
+	object-fit: cover;
+	border-radius: 2px;
+	margin-right: 8px;
+	vertical-align: middle;
+}
+
+.wiro-ai-running,
+.wiro-ai-done {
+	display: inline-flex;
+	align-items: center;
+}
+
+.wiro-ai-failed {
+	color: #b32d2e;
+}
+
+.wiro-ai-muted {
+	color: #646970;
+}
+
+.wiro-ai-totals {
+	display: flex;
+	flex-wrap: wrap;
+	gap: 12px;
+	margin: 16px 0;
+}
+
+.wiro-ai-totals > div {
+	background: #fff;
+	border: 1px solid #dcdcde;
+	border-radius: 4px;
+	padding: 12px 16px;
+	min-width: 160px;
+}
+
+.wiro-ai-totals span {
+	display: block;
+	color: #646970;
+	font-size: 12px;
+}
+
+.wiro-ai-totals strong {
+	font-size: 20px;
+	line-height: 1.6;
+}
+
+.wiro-ai-usage td.num,
+.wiro-ai-usage th.num {
+	text-align: right;
+	white-space: nowrap;
+}
+
+.wiro-ai-usage img {
+	width: 48px;
+	height: 48px;
+	object-fit: cover;
+	border-radius: 2px;
+}
+
+#wiro-ai-media-tools .inside {
+	margin: 0;
+	padding: 0;
+}
+
+.wiro-ai-media-tools .components-panel__body {
+	border-top: 1px solid #f0f0f1;
+}
+
+select.wiro-ai-model-select {
+	width: 30em;
+	max-width: 100%;
+}

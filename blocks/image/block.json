@@ -2,7 +2,7 @@
 	"$schema": "https://schemas.wp.org/trunk/block.json",
 	"apiVersion": 3,
 	"name": "wiro-ai/image",
-	"version": "1.0.0",
+	"version": "1.1.0",
 	"title": "Wiro AI Image",
 	"category": "media",
 	"description": "Generate an image with a Wiro AI model. When it is ready, it is saved to the Media Library and the block turns into an Image block.",

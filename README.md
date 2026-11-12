@@ -4,7 +4,7 @@
 
 # Wiro AI for WordPress
 
-Generate featured images and in-post images in the WordPress block editor with Wiro AI: Nano Banana, GPT Image 2, Seedream, FLUX.2 or any other text-to-image model from a catalog of 1,000+ models.
+Featured images, image editing, upscaling, background removal, alt text, narration and SEO suggestions in WordPress, with models from the Wiro AI catalog of 1,000+.
 
 [![CI](https://img.shields.io/github/actions/workflow/status/wiroai/Wiro-WordPress/ci.yml?branch=main&style=for-the-badge&label=CI&color=111111)](https://github.com/wiroai/Wiro-WordPress/actions/workflows/ci.yml) [![WordPress 6.6+](https://img.shields.io/badge/WordPress-6.6%2B-111111?style=for-the-badge)](./readme.txt) [![Tested up to 7.1](https://img.shields.io/badge/tested%20up%20to-7.1-111111?style=for-the-badge)](./readme.txt) [![PHP 7.4+](https://img.shields.io/badge/PHP-7.4%2B-111111?style=for-the-badge)](./readme.txt) [![License: GPL-2.0-or-later](https://img.shields.io/badge/license-GPL--2.0--or--later-111111?style=for-the-badge)](./LICENSE)
 
@@ -14,22 +14,51 @@ Generate featured images and in-post images in the WordPress block editor with W
 
 </div>
 
-The plugin adds a **Wiro AI featured image** panel to the Post sidebar and a **Wiro AI Image** block. Write a prompt, or build one from the post title or content, pick a model, and the finished image is saved to the Media Library and set as the featured image. The editor only talks to your own site; WordPress calls the [Wiro AI API](https://wiro.ai/docs/run-a-model) with your project's key, so the key never reaches the browser.
+The plugin adds a Wiro AI sidebar to the block editor, a Wiro AI menu to every Image block, Wiro AI tools to images in the Media Library, and Bulk images and Usage screens to the admin. Each tool shows the price of the request before it runs, and every result is saved to the Media Library or the post. The editor only talks to your own site: WordPress calls the [Wiro AI API](https://wiro.ai/docs/run-a-model) and the [LLM gateway](https://wiro.ai/docs/completions-api) with your project's key, so the key never reaches the browser.
 
-![The Wiro AI featured image panel in the Post sidebar](.wordpress-org/screenshot-1.png)
+![The Wiro AI sidebar with a featured image made from the post title](.wordpress-org/screenshot-1.png)
 
 ## Features
 
-- **Featured images from your post.** "From title" and "From content" turn the post title, or its first 60 words, into a prompt you can edit. One click generates the image, saves it to the Media Library and sets it as the featured image.
+**Featured images**
+
+- **From the post.** "From title" and "From content" turn the post title, or its first 60 words, into a prompt you can edit. One click makes the image, saves it to the Media Library and sets it as the featured image. The same tool sits in the Post sidebar.
+- **Bulk featured images.** Wiro AI > Bulk images lists posts with no featured image. Pick the posts, check the total price, confirm, and a queue makes and sets the images, two at a time.
 - **Wiro AI Image block.** Describe an image anywhere in a post. When it is ready, the block replaces itself with a core Image block, so the post keeps working without the plugin.
-- **Eight models in the menu, plus any other one.** Add any text-to-image model from [wiro.ai/models](https://wiro.ai/models) by its slug on the settings page.
-- **Aspect ratios from 16:9 to 9:16.** Each model gets the ratio in the form it expects: its ratio menu, the closest option it supports, or a width and height of about one megapixel.
-- **Tidy Media Library entries.** The file is named after the post title, the alt text is filled in, the prompt goes into the description, and the image is attached to the post.
-- **Cost on screen.** The panel shows what each image cost once it is ready.
 
-![The generated image, saved to the Media Library and set as the featured image](.wordpress-org/screenshot-2.png)
+**Image tools**, in the W menu of any Image block and in the Wiro AI box on Media Library images:
 
-![The Wiro AI Image block](.wordpress-org/screenshot-3.png)
+- **Edit with a prompt**, for example "make it a rainy evening with warm street lights".
+- **Upscale** to a larger, sharper copy, 2x or 4x.
+- **Remove the background** for a transparent PNG.
+- **Write alt text** with an LLM that reads images, in the site's language.
+
+Edits are saved as new images next to the original, and the block change can be undone like any edit.
+
+**Text and speech**
+
+- **Titles, excerpt and SEO description.** An LLM reads the post and suggests three titles, an excerpt and a meta description of up to 155 characters. Apply a title or the excerpt with one click, or copy the description into an SEO plugin.
+- **Narration.** A text-to-speech model reads the title and content (up to 10,000 characters) in the voice you pick. The MP3 goes to the Media Library and an Audio block is added to the top or the end of the post.
+
+**Control**
+
+- **Price before you run**, worked out from the model's price list and the request's settings.
+- **Usage history** with the user, model, cost and result of every request, and the spend per month.
+- **Monthly spending limit** for the site.
+- **Access level:** authors and up, editors and up, or administrators only.
+- **Key in wp-config.php** if you prefer it out of the database.
+
+![Title, excerpt and SEO description suggestions](.wordpress-org/screenshot-2.png)
+
+![Narration with an audio player at the top of the post](.wordpress-org/screenshot-3.png)
+
+![The Wiro AI menu on an Image block](.wordpress-org/screenshot-4.png)
+
+![Wiro AI tools on a Media Library image](.wordpress-org/screenshot-5.jpg)
+
+![Bulk featured images](.wordpress-org/screenshot-6.png)
+
+![Usage history](.wordpress-org/screenshot-7.png)
 
 ## Install
 
@@ -38,11 +67,11 @@ The plugin adds a **Wiro AI featured image** panel to the Post sidebar and a **W
 
 To build the zip yourself, clone the repository and run `bin/build-zip.sh`. It writes `build/wiro-ai.zip` with only the files the plugin needs.
 
-The plugin needs WordPress 6.6 or newer, PHP 7.4 or newer and the block editor. It is tested up to WordPress 7.1.
+The plugin needs WordPress 6.6 or newer and PHP 7.4 or newer. It is tested up to WordPress 7.1. The editor tools need the block editor; the Media Library tools, the bulk screen and the usage history work with either editor.
 
 ## Set your API key
 
-Create a project at [wiro.ai/panel/project/new](https://wiro.ai/panel/project/new) and copy its API key. If you pick signature authentication, copy the API secret too. Then open **Settings → Wiro AI**, paste the key (and secret), save, and click **Check connection**. The check is free.
+Create a project at [wiro.ai/panel/project/new](https://wiro.ai/panel/project/new) and copy its API key. If you pick signature authentication, copy the API secret too. Then open **Wiro AI → Settings**, paste the key (and secret), save, and click **Check connection**. The check is free.
 
 The settings page never prints the saved key back into the form: it shows the last four characters, and an empty field keeps the saved value. To keep the key out of the database, define it in `wp-config.php` instead:
 
@@ -51,66 +80,73 @@ define( 'WIRO_AI_API_KEY', 'your-api-key' );
 define( 'WIRO_AI_API_SECRET', 'your-api-secret' ); // Only for signature-based projects.
 ```
 
-![Settings > Wiro AI](.wordpress-org/screenshot-4.png)
+![Settings: a default model per task, defaults, a monthly limit and access](.wordpress-org/screenshot-8.png)
 
 ## Models
 
-| Model | Slug | Notes |
-| --- | --- | --- |
-| Nano Banana 2.1 | [`google/nano-banana-2-1`](https://wiro.ai/models/google/nano-banana-2-1) | Default model |
-| GPT Image 2 | [`openai/gpt-image-2`](https://wiro.ai/models/openai/gpt-image-2) | Sent with `quality: medium` |
-| Seedream 5 Pro | [`bytedance/seedream-v5-pro`](https://wiro.ai/models/bytedance/seedream-v5-pro) | |
-| FLUX.2 Pro | [`black-forest-labs/flux-2-pro`](https://wiro.ai/models/black-forest-labs/flux-2-pro) | Ratio sent as width and height |
-| Nano Banana Pro | [`google/nano-banana-pro`](https://wiro.ai/models/google/nano-banana-pro) | |
-| Grok Imagine Image 2 | [`xai/grok-imagine-image-v2`](https://wiro.ai/models/xai/grok-imagine-image-v2) | |
-| Qwen Image 3.0 | [`alibaba/qwen-image-3-0`](https://wiro.ai/models/alibaba/qwen-image-3-0) | |
-| P-Image | [`pruna/p-image`](https://wiro.ai/models/pruna/p-image) | Fast, low cost |
+Every task has its own model menu. The recommended models come first; the rest of the menu is every model of the task's category in the Wiro AI catalog (or, for the LLM tasks, every gateway model with a listed token price), named by `owner/slug` with its price. Pick a default per task in the settings and change it for any request.
 
-**Other model** on the settings page takes any slug, or the model page URL, such as `https://wiro.ai/models/bytedance/seedream-v5-lite`. Required settings that the plugin does not set, such as a resolution, get the model's own default, read from [Tool/Detail](https://wiro.ai/docs/models) and cached for 12 hours. Each image is billed to your Wiro AI project at the price on the model's page.
+| Task | Catalog category | Recommended models |
+| --- | --- | --- |
+| Images from a prompt | `text-to-image` | `google/nano-banana-2-1` (default), `openai/gpt-image-2`, `bytedance/seedream-v5-pro`, `black-forest-labs/flux-2-pro`, `google/nano-banana-pro`, `xai/grok-imagine-image-v2`, `alibaba/qwen-image-3-0`, `pruna/p-image` |
+| Edit with a prompt | `image-editing` | `google/nano-banana-2-1` (default), `openai/gpt-image-2`, `bytedance/seedream-v5-pro`, `google/nano-banana-pro`, `black-forest-labs/flux-2-pro`, `alibaba/qwen-image-3-0-pro`, `fireredteam/firered-image-edit` |
+| Upscale | `upscale` | `xinntao/real-esrgan` (default), `wiro/image-restoration`, `wiroai/flux-upscaler` |
+| Remove the background | `background-removal` | `wiro/remove-background` (default), `briaai/rmbg-2-0`, `ideogram/remove-background`, `zhengpeng7/birefnet` |
+| Narration | `text-to-speech` | `elevenlabs/eleven-v4-turbo` (default), `elevenlabs/eleven-v4`, `google/gemini-3-1-tts`, `wiro/kokoro-tts` |
+| Alt text | LLM gateway, models that read images | `google/gemini-3-5-flash-lite` (default), `openai/gpt-5-nano`, `google/gemini-3-flash`, `openai/gpt-5-mini` |
+| Titles, excerpt and SEO | LLM gateway | `google/gemini-3-5-flash-lite` (default), `openai/gpt-5-mini`, `google/gemini-3-flash`, `claude/sonnet-5` |
+
+Each model's own settings come from [Tool/Detail](https://wiro.ai/docs/models): required settings the plugin does not set, such as a resolution, get the model's default, and the common values go to the fields the model has for them (its ratio menu or width and height, its voice menu, its upscale factor, its image field). Model lists and details are cached for 12 hours.
 
 ## How it works
 
-1. The editor sends the prompt, model, ratio and post ID to `POST /wp-json/wiro-ai/v1/tasks`.
-2. WordPress builds the model's parameters and starts a task with `POST https://api.wiro.ai/v1/Run/{owner}/{model}`. The Wiro AI task token stays on the server; the editor gets a random ID that only works for the user who started the task.
-3. The editor polls `GET /wp-json/wiro-ai/v1/tasks/{id}` every few seconds. WordPress reads the task with `Task/Detail` until it reaches `task_postprocess_end`, then checks that `pexit` is `"0"` ([Tasks](https://wiro.ai/docs/tasks)).
-4. WordPress downloads the image, only from an HTTPS `*.wiro.ai` host, adds it to the Media Library with `media_handle_sideload()`, and returns the attachment. The panel sets it as the featured image; the block turns into a core Image block.
+Every request is a job, stored as a private `wiro_ai_job` post with its user, task, model, state, cost and result.
 
-Starting an image needs the `upload_files` capability (Authors and above) and permission to edit the post. Requests use the [`x-api-key` header](https://wiro.ai/docs/authentication), plus `x-nonce` and `x-signature` for signature-based projects.
+| Route | What it does |
+| --- | --- |
+| `POST /wp-json/wiro-ai/v1/jobs` | Starts a job. Image, edit, upscale, background and narration jobs start a Wiro AI task with `POST /v1/Run/{owner}/{model}`; source images are uploaded first with `File/Upload`. Alt text and suggestions call `POST /v1/chat/completions` on the LLM gateway and answer right away. |
+| `GET /wp-json/wiro-ai/v1/jobs/{id}` | Reports a running job. WordPress reads the task with `Task/Detail` until `task_postprocess_end`, checks that `pexit` is `"0"`, downloads the result (only from an HTTPS `*.wiro.ai` host) and adds it to the Media Library. |
+| `GET /wp-json/wiro-ai/v1/models?task=` | The model menu of a task, with prices. |
+| `GET /wp-json/wiro-ai/v1/model?task=narration&model=` | The voices of a text-to-speech model. |
+| `POST /wp-json/wiro-ai/v1/quote` | The price line for a planned request. |
+
+The Wiro AI task token stays on the server; a job can only be read by the user who started it or by an administrator. Starting a job needs the access level from the settings plus edit rights on the post or image. Requests use the [`x-api-key` header](https://wiro.ai/docs/authentication) (plus `x-nonce` and `x-signature` for signature-based projects), and the gateway gets the key as a Bearer token.
+
+Prices follow the way Wiro AI bills a run: the first price row whose values match the request's settings, then the row's method (per run, per output, per character, per 1024 x 1024 block, by tokens or by run time). LLM prices are estimated from the gateway's token prices.
 
 ## Hooks
 
 ```php
-// Only administrators can spend from the site's Wiro AI project.
+// Who can use Wiro AI. The setting picks the starting value.
 add_filter( 'wiro_ai_generate_capability', fn () => 'manage_options' );
 
-// Change the models in the menu. Keys are owner/model slugs; "params" are sent with every request.
-add_filter( 'wiro_ai_models', function ( $models ) {
-	unset( $models['google/nano-banana-pro'] );
-	$models['bytedance/seedream-v5-lite'] = array( 'label' => 'Seedream 5 Lite (ByteDance)' );
-	return $models;
-} );
-
-// Adjust the parameters of one request.
-add_filter( 'wiro_ai_run_params', function ( $params, $slug, $context ) {
-	if ( 'google/nano-banana-2-1' === $slug ) {
-		$params['resolution'] = '2K';
+// Values sent to a model on every request of a task.
+add_filter( 'wiro_ai_presets', function ( $presets, $task, $slug ) {
+	if ( 'image' === $task && 'google/nano-banana-2-1' === $slug ) {
+		$presets['resolution'] = '2K';
 	}
+	return $presets;
+}, 10, 3 );
+
+// The parameters of one request, just before it is sent.
+add_filter( 'wiro_ai_run_params', function ( $params, $slug, $context ) {
+	// $context has the task, post ID, attachment ID and purpose.
 	return $params;
 }, 10, 3 );
 ```
 
 ## Privacy
 
-The plugin sends nothing until a key is saved. When someone clicks **Generate image**, it sends the prompt, model and image settings with the API key to `api.wiro.ai`, checks the task every few seconds, and downloads the result from Wiro AI's file servers. It sends no other post content, user data or site address. See the [Wiro AI terms of service](https://wiro.ai/agreement/terms-of-service) and [privacy policy](https://wiro.ai/agreement/privacy-policy).
+The plugin sends nothing until a key is saved. It sends prompts, the chosen model and its settings, source images for edits, upscaling and background removal (uploaded to your Wiro AI file storage), a smaller copy of an image for alt text, and the post title and text for narration and suggestions. It sends no other content, user data or site address. See the [Wiro AI terms of service](https://wiro.ai/agreement/terms-of-service) and [privacy policy](https://wiro.ai/agreement/privacy-policy).
 
 ## Development
 
-The plugin has no build step: the editor scripts are plain JavaScript on top of the `wp.*` packages.
+The plugin has no build step: the scripts are plain JavaScript on top of the `wp.*` packages.
 
 ```bash
 composer install            # PHPCS with WordPress Coding Standards, PHPCompatibility and PHPUnit
 vendor/bin/phpcs            # lint PHP
-vendor/bin/phpunit          # unit tests for request building, slugs, outputs and URL checks
+vendor/bin/phpunit          # unit tests for pricing, request building, slugs, outputs and URL checks
 npm install && npm run lint:js
 bin/build-zip.sh            # build/wiro-ai.zip
 ```
@@ -124,9 +160,12 @@ CI also runs [Plugin Check](https://wordpress.org/plugins/plugin-check/) on the 
 | [Wiro-MCP](https://github.com/wiroai/Wiro-MCP) | Official MCP server for Wiro AI, [`@wiro-ai/wiro-mcp` on npm](https://www.npmjs.com/package/@wiro-ai/wiro-mcp) |
 | [Wiro-Plugin](https://github.com/wiroai/Wiro-Plugin) | Wiro AI plugin for Cursor, Claude Code, Gemini CLI and Devin |
 | [Wiro-LLM](https://github.com/wiroai/Wiro-LLM) | Wiro AI provider for the Vercel AI SDK and LLM gateway examples, [`@wiro-ai/wiro-llm` on npm](https://www.npmjs.com/package/@wiro-ai/wiro-llm) |
-| [Wiro-WordPress](https://github.com/wiroai/Wiro-WordPress) | Wiro AI plugin for WordPress: featured images and an image block (this repository) |
+| [Wiro-WordPress](https://github.com/wiroai/Wiro-WordPress) | Wiro AI plugin for WordPress: images, image tools, alt text, narration and SEO suggestions (this repository) |
 | [Wiro-ComfyUI](https://github.com/wiroai/Wiro-ComfyUI) | Wiro AI nodes for ComfyUI |
 | [Wiro-Dify-Plugin](https://github.com/wiroai/Wiro-Dify-Plugin) | Wiro AI plugins for Dify: the LLM gateway as a model provider, plus image, video, speech and music tools |
+| [Wiro-Figma](https://github.com/wiroai/Wiro-Figma) | Wiro AI plugin for Figma |
+| [Wiro-Blender](https://github.com/wiroai/Wiro-Blender) | Wiro AI add-on for Blender: text to 3D and image to 3D |
+| [Wiro-Obsidian](https://github.com/wiroai/Wiro-Obsidian) | Wiro AI plugin for Obsidian |
 | [Wiro-Zed](https://github.com/wiroai/Wiro-Zed) | Wiro AI MCP server for the Zed editor |
 | [Wiro-Raycast](https://github.com/wiroai/Wiro-Raycast) | Wiro AI extension for Raycast |
 | [Wiro-Action](https://github.com/wiroai/Wiro-Action) | GitHub Action for Wiro AI |
