@@ -6,9 +6,9 @@
 
 Featured images, image editing, upscaling, background removal, alt text, narration and SEO suggestions in WordPress, with models from the Wiro AI catalog of 1,000+.
 
-[![CI](https://img.shields.io/github/actions/workflow/status/wiroai/Wiro-WordPress/ci.yml?branch=main&style=for-the-badge&label=CI&color=111111)](https://github.com/wiroai/Wiro-WordPress/actions/workflows/ci.yml) [![WordPress 6.6+](https://img.shields.io/badge/WordPress-6.6%2B-111111?style=for-the-badge)](./readme.txt) [![Tested up to 7.1](https://img.shields.io/badge/tested%20up%20to-7.1-111111?style=for-the-badge)](./readme.txt) [![PHP 7.4+](https://img.shields.io/badge/PHP-7.4%2B-111111?style=for-the-badge)](./readme.txt) [![License: GPL-2.0-or-later](https://img.shields.io/badge/license-GPL--2.0--or--later-111111?style=for-the-badge)](./LICENSE)
+[![WordPress.org](https://img.shields.io/wordpress/plugin/v/wiro-ai?style=for-the-badge&label=WordPress.org&color=111111)](https://wordpress.org/plugins/wiro-ai/) [![CI](https://img.shields.io/github/actions/workflow/status/wiroai/Wiro-WordPress/ci.yml?branch=main&style=for-the-badge&label=CI&color=111111)](https://github.com/wiroai/Wiro-WordPress/actions/workflows/ci.yml) [![WordPress 6.6+](https://img.shields.io/badge/WordPress-6.6%2B-111111?style=for-the-badge)](./readme.txt) [![Tested up to 7.1](https://img.shields.io/badge/tested%20up%20to-7.1-111111?style=for-the-badge)](./readme.txt) [![PHP 7.4+](https://img.shields.io/badge/PHP-7.4%2B-111111?style=for-the-badge)](./readme.txt) [![License: GPL-2.0-or-later](https://img.shields.io/badge/license-GPL--2.0--or--later-111111?style=for-the-badge)](./LICENSE)
 
-[Website](https://wiro.ai) · [Models](https://wiro.ai/models) · [Docs](https://wiro.ai/docs) · [Dashboard](https://wiro.ai/panel)
+[Website](https://wiro.ai) · [WordPress.org](https://wordpress.org/plugins/wiro-ai/) · [Models](https://wiro.ai/models) · [Docs](https://wiro.ai/docs) · [Dashboard](https://wiro.ai/panel)
 
 <img src="https://wiro.ai/images/koala/accent-heavy-koala.png" alt="Wiro AI koala mascot" width="60" />
 
@@ -61,6 +61,10 @@ Edits are saved as new images next to the original, and the block change can be 
 ![Usage history](.wordpress-org/screenshot-7.png)
 
 ## Install
+
+The plugin is in the WordPress plugin directory: [wordpress.org/plugins/wiro-ai](https://wordpress.org/plugins/wiro-ai/). In WordPress, go to **Plugins → Add New Plugin**, search for **Wiro AI**, click **Install Now** and then **Activate**.
+
+To install it by hand instead:
 
 1. Download `wiro-ai.zip` from the [latest release](https://github.com/wiroai/Wiro-WordPress/releases/latest).
 2. In WordPress, go to **Plugins → Add New Plugin → Upload Plugin**, choose the zip and activate **Wiro AI**.
