@@ -3,7 +3,7 @@
  * Plugin Name:       Wiro AI
  * Plugin URI:        https://github.com/wiroai/Wiro-WordPress
  * Description:       Featured images, image editing, upscaling, background removal, alt text, narration and SEO suggestions in WordPress, with Wiro AI models.
- * Version:           1.1.0
+ * Version:           1.1.1
  * Requires at least: 6.6
  * Requires PHP:      7.4
  * Author:            Wiro AI
@@ -19,7 +19,7 @@ if ( ! defined( 'ABSPATH' ) ) {
 	exit;
 }
 
-define( 'WIRO_AI_VERSION', '1.1.0' );
+define( 'WIRO_AI_VERSION', '1.1.1' );
 define( 'WIRO_AI_FILE', __FILE__ );
 define( 'WIRO_AI_DIR', plugin_dir_path( __FILE__ ) );
 define( 'WIRO_AI_URL', plugin_dir_url( __FILE__ ) );

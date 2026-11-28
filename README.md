@@ -116,7 +116,7 @@ Every request is a job, stored as a private `wiro_ai_job` post with its user, ta
 
 The Wiro AI task token stays on the server; a job can only be read by the user who started it or by an administrator. Starting a job needs the access level from the settings plus edit rights on the post or image. Requests use the [`x-api-key` header](https://wiro.ai/docs/authentication) (plus `x-nonce` and `x-signature` for signature-based projects), and the gateway gets the key as a Bearer token.
 
-Prices follow the way Wiro AI bills a run: the first price row whose values match the request's settings, then the row's method (per run, per output, per character, per 1024 x 1024 block, by tokens or by run time). LLM prices are estimated from the gateway's token prices.
+Prices follow the way Wiro AI bills a run: the first price row whose values match the request's settings, then the row's method (per run, per output file, per prompt character, per started 1024 x 1024 block of the output, per second of input audio or video, per input and output token, or by run time). LLM prices are estimated from the gateway's token prices.
 
 ## Hooks
 

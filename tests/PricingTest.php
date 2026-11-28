@@ -15,9 +15,9 @@ final class PricingTest extends TestCase {
 	/**
 	 * Per-run prices pick the row whose values match the settings.
 	 */
-	public function test_cpr_matches_the_settings_row() {
+	public function test_per_run_matches_the_settings_row() {
 		$model = array(
-			'dynamicprice' => '[{"inputs":{"resolution":"1K"},"price":0.0336,"priceMethod":"cpr"},{"inputs":{"resolution":"2K"},"price":0.0504,"priceMethod":"cpr"}]',
+			'dynamicprice' => '[{"inputs":{"resolution":"1K"},"price":0.0336,"priceMethod":"per-run"},{"inputs":{"resolution":"2K"},"price":0.0504,"priceMethod":"per-run"}]',
 		);
 		$quote = Wiro_AI_Pricing::quote( $model, array( 'resolution' => '2K' ) );
 		$this->assertSame( 0.0504, $quote['amount'] );
@@ -29,32 +29,34 @@ final class PricingTest extends TestCase {
 	}
 
 	/**
-	 * Per-output prices multiply by the number of outputs.
+	 * Per-output-file prices multiply by the number of outputs.
 	 */
-	public function test_cpo_counts_outputs() {
+	public function test_per_output_file_counts_outputs() {
 		$model = array(
 			'dynamicprice' => array(
 				array(
 					'inputs'      => array(),
 					'price'       => 0.04,
-					'priceMethod' => 'cpo',
+					'priceMethod' => 'per-output-file',
 				),
 			),
 		);
 		$quote = Wiro_AI_Pricing::quote( $model, array( 'samples' => 3 ) );
 		$this->assertEqualsWithDelta( 0.12, $quote['amount'], 0.000001 );
+		$this->assertSame( '$0.12', $quote['label'] );
+		$this->assertSame( '$0.04 per output file.', $quote['note'] );
 	}
 
 	/**
 	 * Per-character prices use the length of the text.
 	 */
-	public function test_promptlength_uses_characters() {
+	public function test_per_input_character_uses_characters() {
 		$model = array(
 			'dynamicprice' => array(
 				array(
 					'inputs'      => array(),
 					'price'       => 0.00004,
-					'priceMethod' => 'cp-promptlength',
+					'priceMethod' => 'per-input-character',
 				),
 			),
 		);
@@ -65,19 +67,19 @@ final class PricingTest extends TestCase {
 
 		$quote = Wiro_AI_Pricing::quote( $model, array() );
 		$this->assertNull( $quote['amount'] );
-		$this->assertSame( '$0.00004 per character', $quote['label'] );
+		$this->assertSame( '$0.00004 per prompt character', $quote['label'] );
 	}
 
 	/**
-	 * Pixel prices count 1024 x 1024 blocks.
+	 * Per-output-megapixel prices count 1024 x 1024 blocks.
 	 */
-	public function test_pixel_counts_blocks() {
+	public function test_per_output_megapixel_counts_blocks() {
 		$model = array(
 			'dynamicprice' => array(
 				array(
 					'inputs'      => array( 'inputImage' => 'QUANTITY:0' ),
 					'price'       => 0.03,
-					'priceMethod' => 'cp-pixel',
+					'priceMethod' => 'per-output-megapixel',
 					'priceExtra'  => 0.015,
 				),
 			),
@@ -97,12 +99,12 @@ final class PricingTest extends TestCase {
 				array(
 					'inputs'      => array( 'inputImage' => 'QUANTITY:0' ),
 					'price'       => 0.03,
-					'priceMethod' => 'cpr',
+					'priceMethod' => 'per-run',
 				),
 				array(
 					'inputs'      => array( 'inputImage' => 'QUANTITY:1' ),
 					'price'       => 0.05,
-					'priceMethod' => 'cpr',
+					'priceMethod' => 'per-run',
 				),
 			)
 		);
@@ -122,21 +124,49 @@ final class PricingTest extends TestCase {
 	}
 
 	/**
-	 * Prices set when the task ends show the row's note.
+	 * Unit prices read in Wiro AI's words for their method.
 	 */
-	public function test_readoutput_note() {
+	public function test_unit_prices_read_in_plain_words() {
+		$labels = array(
+			'per-input-audio-second'  => '$0.0006 per second of input audio',
+			'per-input-video-second'  => '$0.0006 per second of input video',
+			'per-output-video-second' => '$0.0006 per second of output video',
+			'per-run-second'          => '$0.0006 per second of run time',
+			'per-total-token'         => '$0.0006 per input and output token',
+		);
+		foreach ( $labels as $method => $label ) {
+			$model = array(
+				'dynamicprice' => array(
+					array(
+						'inputs'      => array(),
+						'price'       => 0.0006,
+						'priceMethod' => $method,
+						'maxSeconds'  => 60,
+					),
+				),
+			);
+			$quote = Wiro_AI_Pricing::quote( $model, array() );
+			$this->assertNull( $quote['amount'], $method );
+			$this->assertSame( $label, $quote['label'], $method );
+		}
+	}
+
+	/**
+	 * Prices set when the run ends show the row's note.
+	 */
+	public function test_reported_price_note() {
 		$model = array(
 			'dynamicprice' => array(
 				array(
 					'inputs'      => array(),
 					'price'       => 0,
-					'priceMethod' => 'cp-readoutput',
+					'priceMethod' => 'reported-price',
 					'note'        => 'Input: $1.00 per 1M tokens.',
 				),
 			),
 		);
 		$quote = Wiro_AI_Pricing::quote( $model, array() );
-		$this->assertSame( 'set when the task ends', $quote['label'] );
+		$this->assertSame( 'set when the run ends', $quote['label'] );
 		$this->assertSame( 'Input: $1.00 per 1M tokens.', $quote['note'] );
 	}
 
@@ -149,7 +179,7 @@ final class PricingTest extends TestCase {
 				array(
 					'inputs'      => array(),
 					'price'       => 0.1,
-					'priceMethod' => 'cpr',
+					'priceMethod' => 'per-run',
 				),
 			),
 			'discount'     => 50,
@@ -194,11 +224,16 @@ final class PricingTest extends TestCase {
 	 * Short list labels.
 	 */
 	public function test_short_label() {
-		$this->assertSame( '$0.034', Wiro_AI_Pricing::short_label( array( 'dynamicprice' => '[{"inputs":{},"price":0.0336,"priceMethod":"cpr"}]' ) ) );
-		$this->assertSame( 'from $0.003', Wiro_AI_Pricing::short_label( array( 'dynamicprice' => '[{"inputs":{"q":"low"},"price":0.003,"priceMethod":"cpr"},{"inputs":{"q":"high"},"price":0.2,"priceMethod":"cpr"}]' ) ) );
-		$this->assertSame( '$0.04 / 1K characters', Wiro_AI_Pricing::short_label( array( 'dynamicprice' => '[{"inputs":{},"price":0.00004,"priceMethod":"cp-promptlength"}]' ) ) );
+		$this->assertSame( '$0.034', Wiro_AI_Pricing::short_label( array( 'dynamicprice' => '[{"inputs":{},"price":0.0336,"priceMethod":"per-run"}]' ) ) );
+		$this->assertSame( 'from $0.003', Wiro_AI_Pricing::short_label( array( 'dynamicprice' => '[{"inputs":{"q":"low"},"price":0.003,"priceMethod":"per-run"},{"inputs":{"q":"high"},"price":0.2,"priceMethod":"per-run"}]' ) ) );
+		$this->assertSame( '$0.04 per 1K prompt characters', Wiro_AI_Pricing::short_label( array( 'dynamicprice' => '[{"inputs":{},"price":0.00004,"priceMethod":"per-input-character"}]' ) ) );
 		$this->assertSame( 'about $0.00121', Wiro_AI_Pricing::short_label( array( 'approximatelycost' => 0.0012083 ) ) );
-		$this->assertSame( '$0.00001 / token', Wiro_AI_Pricing::short_label( array( 'dynamicprice' => '[{"inputs":{},"price":0.00001,"priceMethod":"cpt"}]' ) ) );
+		$this->assertSame( '$0.00001 per input and output token', Wiro_AI_Pricing::short_label( array( 'dynamicprice' => '[{"inputs":{},"price":0.00001,"priceMethod":"per-total-token"}]' ) ) );
+		$this->assertSame( '$0.025 per second of input video', Wiro_AI_Pricing::short_label( array( 'dynamicprice' => '[{"inputs":{"resolution":"1080p"},"price":0.025,"priceMethod":"per-input-video-second","maxSeconds":60}]' ) ) );
+		$this->assertSame( '$0.0006 per second of input audio', Wiro_AI_Pricing::short_label( array( 'dynamicprice' => '[{"inputs":{},"price":0.0006,"priceMethod":"per-input-audio-second"}]' ) ) );
+		$this->assertSame( '$0.05 per second of output video', Wiro_AI_Pricing::short_label( array( 'dynamicprice' => '[{"inputs":{},"price":0.05,"priceMethod":"per-output-video-second"}]' ) ) );
+		$this->assertSame( '$0.04', Wiro_AI_Pricing::short_label( array( 'dynamicprice' => '[{"inputs":{},"price":0.04,"priceMethod":"per-output-file"}]' ) ) );
+		$this->assertSame( 'set when the run ends', Wiro_AI_Pricing::short_label( array( 'dynamicprice' => '[{"inputs":{},"price":0,"priceMethod":"reported-price"}]' ) ) );
 		$this->assertSame( '', Wiro_AI_Pricing::short_label( array() ) );
 	}
 }
