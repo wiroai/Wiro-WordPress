@@ -5,9 +5,11 @@
  * Plain PHP with no WordPress calls, so the unit tests can load it on its own.
  * It follows the way Wiro AI bills a run: the first price row whose values all
  * match the run's settings (or, when rows count files, the valid row with the
- * highest count), then the row's method: cpr per run, cpo per output,
- * cp-promptlength per character, cp-pixel per 1024 x 1024 block, and so on.
- * A model without price rows is billed for its run time.
+ * highest count), then the row's priceMethod: per-run, per-output-file,
+ * per-input-character, per-output-megapixel (started 1024 x 1024 blocks of the
+ * output), and so on. A price is followed by Wiro AI's own words for its
+ * method ("per second of input audio"), never by the method's id. A model
+ * without price rows is billed for its run time.
  *
  * @package WiroAI
  */
@@ -22,7 +24,7 @@ if ( ! defined( 'ABSPATH' ) ) {
 final class Wiro_AI_Pricing {
 
 	/**
-	 * Pixels in one billing block of cp-pixel models.
+	 * Pixels in one billing block of per-output-megapixel models.
 	 */
 	const PIXEL_BLOCK = 1048576;
 
@@ -182,19 +184,25 @@ final class Wiro_AI_Pricing {
 		$low    = $prices ? min( $prices ) : 0.0;
 		$high   = $prices ? max( $prices ) : 0.0;
 		switch ( $method ) {
-			case 'cpr':
-			case 'cpo':
-			case 'cp-pixel':
+			case 'per-run':
+			case 'per-output-file':
+			case 'per-output-megapixel':
 				if ( $low <= 0 && $high <= 0 ) {
 					return self::t( 'free' );
 				}
 				return $low < $high ? sprintf( self::t( 'from' ), self::format_usd( $low ) ) : self::format_usd( $low );
-			case 'cp-promptlength':
+			case 'per-input-character':
 				return sprintf( self::t( 'per_1k_chars' ), self::format_usd( $low * 1000 ) );
-			case 'cps':
-				return sprintf( self::t( 'per_second_short' ), self::format_usd( $low ) );
-			case 'cpt':
-				return sprintf( self::t( 'per_token_short' ), self::format_usd( $low ) );
+			case 'per-run-second':
+				return sprintf( self::t( 'per_run_second' ), self::format_usd( $low ) );
+			case 'per-total-token':
+				return sprintf( self::t( 'per_token' ), self::format_usd( $low ) );
+			case 'per-input-audio-second':
+				return sprintf( self::t( 'per_input_audio_second' ), self::format_usd( $low ) );
+			case 'per-input-video-second':
+				return sprintf( self::t( 'per_input_video_second' ), self::format_usd( $low ) );
+			case 'per-output-video-second':
+				return sprintf( self::t( 'per_output_video_second' ), self::format_usd( $low ) );
 			default:
 				return $low > 0 ? sprintf( self::t( 'about' ), self::format_usd( $low ) ) : self::t( 'set_when_ends' );
 		}
@@ -228,26 +236,26 @@ final class Wiro_AI_Pricing {
 	 */
 	private static function t( $key ) {
 		$english = array(
-			'free'             => 'free',
-			'about'            => 'about %s',
-			'from'             => 'from %s',
-			'per_character'    => '%s per character',
-			'chars_at'         => '%1$s characters at %2$s each.',
-			'per_output'       => '%s per output.',
-			'per_audio_second' => '%s per second of audio',
-			'per_video_second' => '%s per second of video',
-			'per_run_second'   => '%s per second of run time',
-			'by_tokens'        => 'billed by tokens',
-			'by_run_time'      => 'billed by run time',
-			'set_when_ends'    => 'set when the task ends',
-			'task_note'        => 'The exact charge shows when the task ends.',
-			'answer_note'      => 'The exact charge shows when the answer arrives.',
-			'run_time_note'    => 'Billed by run time; past runs averaged this.',
-			'token_rates'      => '%1$s per 1M input tokens, %2$s per 1M output tokens.',
-			'discount'         => '%s%% off.',
-			'per_1k_chars'     => '%s / 1K characters',
-			'per_second_short' => '%s / second',
-			'per_token_short'  => '%s / token',
+			'free'                    => 'free',
+			'about'                   => 'about %s',
+			'from'                    => 'from %s',
+			'per_character'           => '%s per prompt character',
+			'chars_at'                => '%1$s characters at %2$s each.',
+			'per_output'              => '%s per output file.',
+			'per_input_audio_second'  => '%s per second of input audio',
+			'per_input_video_second'  => '%s per second of input video',
+			'per_output_video_second' => '%s per second of output video',
+			'per_run_second'          => '%s per second of run time',
+			'per_token'               => '%s per input and output token',
+			'by_tokens'               => 'billed by tokens',
+			'by_run_time'             => 'billed by run time',
+			'set_when_ends'           => 'set when the run ends',
+			'task_note'               => 'The exact charge shows when the task ends.',
+			'answer_note'             => 'The exact charge shows when the answer arrives.',
+			'run_time_note'           => 'Billed by run time; past runs averaged this.',
+			'token_rates'             => '%1$s per 1M input tokens, %2$s per 1M output tokens.',
+			'discount'                => '%s%% off.',
+			'per_1k_chars'            => '%s per 1K prompt characters',
 		);
 		if ( ! function_exists( '__' ) ) {
 			return isset( $english[ $key ] ) ? $english[ $key ] : $key;
@@ -263,28 +271,34 @@ final class Wiro_AI_Pricing {
 				return __( 'from %s', 'wiro-ai' );
 			case 'per_character':
 				/* translators: %s: price such as $0.00004. */
-				return __( '%s per character', 'wiro-ai' );
+				return __( '%s per prompt character', 'wiro-ai' );
 			case 'chars_at':
 				/* translators: 1: number of characters, 2: price per character. */
 				return __( '%1$s characters at %2$s each.', 'wiro-ai' );
 			case 'per_output':
 				/* translators: %s: price such as $0.03. */
-				return __( '%s per output.', 'wiro-ai' );
-			case 'per_audio_second':
+				return __( '%s per output file.', 'wiro-ai' );
+			case 'per_input_audio_second':
 				/* translators: %s: price such as $0.01. */
-				return __( '%s per second of audio', 'wiro-ai' );
-			case 'per_video_second':
+				return __( '%s per second of input audio', 'wiro-ai' );
+			case 'per_input_video_second':
 				/* translators: %s: price such as $0.01. */
-				return __( '%s per second of video', 'wiro-ai' );
+				return __( '%s per second of input video', 'wiro-ai' );
+			case 'per_output_video_second':
+				/* translators: %s: price such as $0.01. */
+				return __( '%s per second of output video', 'wiro-ai' );
 			case 'per_run_second':
 				/* translators: %s: price such as $0.001. */
 				return __( '%s per second of run time', 'wiro-ai' );
+			case 'per_token':
+				/* translators: %s: price such as $0.00001. */
+				return __( '%s per input and output token', 'wiro-ai' );
 			case 'by_tokens':
 				return __( 'billed by tokens', 'wiro-ai' );
 			case 'by_run_time':
 				return __( 'billed by run time', 'wiro-ai' );
 			case 'set_when_ends':
-				return __( 'set when the task ends', 'wiro-ai' );
+				return __( 'set when the run ends', 'wiro-ai' );
 			case 'task_note':
 				return __( 'The exact charge shows when the task ends.', 'wiro-ai' );
 			case 'answer_note':
@@ -299,13 +313,7 @@ final class Wiro_AI_Pricing {
 				return __( '%s%% off.', 'wiro-ai' );
 			case 'per_1k_chars':
 				/* translators: %s: price such as $0.04. */
-				return __( '%s / 1K characters', 'wiro-ai' );
-			case 'per_second_short':
-				/* translators: %s: price such as $0.001. */
-				return __( '%s / second', 'wiro-ai' );
-			case 'per_token_short':
-				/* translators: %s: price such as $0.00001. */
-				return __( '%s / token', 'wiro-ai' );
+				return __( '%s per 1K prompt characters', 'wiro-ai' );
 		}
 		return isset( $english[ $key ] ) ? $english[ $key ] : $key;
 	}
@@ -324,20 +332,20 @@ final class Wiro_AI_Pricing {
 		$note  = isset( $row['note'] ) && is_string( $row['note'] ) ? trim( preg_replace( '/\s+/', ' ', $row['note'] ) ) : '';
 
 		switch ( (string) $row['priceMethod'] ) {
-			case 'cpr':
+			case 'per-run':
 				return self::result( $price, false, $price > 0 ? self::format_usd( $price ) : self::t( 'free' ), $note );
-			case 'cpo':
+			case 'per-output-file':
 				$count  = self::output_count( $params );
 				$amount = $price * $count;
 				$sub    = $count > 1 ? sprintf( self::t( 'per_output' ), self::format_usd( $price ) ) : '';
 				return self::result( $amount, false, $amount > 0 ? self::format_usd( $amount ) : self::t( 'free' ), trim( $note . ' ' . $sub ) );
-			case 'cp-promptlength':
+			case 'per-input-character':
 				$chars = isset( $context['chars'] ) ? max( 0, (int) $context['chars'] ) : 0;
 				if ( 0 === $chars ) {
 					return self::result( null, true, sprintf( self::t( 'per_character' ), self::format_usd( $price ) ), $note );
 				}
 				return self::result( $price * $chars, false, self::format_usd( $price * $chars ), trim( sprintf( self::t( 'chars_at' ), number_format( $chars ), self::format_usd( $price ) ) . ' ' . $note ) );
-			case 'cp-pixel':
+			case 'per-output-megapixel':
 				$pixels = isset( $context['pixels'] ) ? max( 0, (int) $context['pixels'] ) : 0;
 				$extra  = ( isset( $row['priceExtra'] ) && is_numeric( $row['priceExtra'] ) ? (float) $row['priceExtra'] : 0.0 ) * $scale;
 				if ( 0 === $pixels ) {
@@ -346,15 +354,17 @@ final class Wiro_AI_Pricing {
 				$blocks = max( 1, (int) ceil( $pixels / self::PIXEL_BLOCK ) );
 				$amount = $price + ( $blocks - 1 ) * $extra;
 				return self::result( $amount, false, self::format_usd( $amount ), $note );
-			case 'cp-audiosecondslength':
-				return self::result( null, true, sprintf( self::t( 'per_audio_second' ), self::format_usd( $price ) ), $note );
-			case 'cp-outputVideoLength':
-				return self::result( null, true, sprintf( self::t( 'per_video_second' ), self::format_usd( $price ) ), $note );
-			case 'cps':
+			case 'per-input-audio-second':
+				return self::result( null, true, sprintf( self::t( 'per_input_audio_second' ), self::format_usd( $price ) ), $note );
+			case 'per-input-video-second':
+				return self::result( null, true, sprintf( self::t( 'per_input_video_second' ), self::format_usd( $price ) ), $note );
+			case 'per-output-video-second':
+				return self::result( null, true, sprintf( self::t( 'per_output_video_second' ), self::format_usd( $price ) ), $note );
+			case 'per-run-second':
 				return self::result( null, true, sprintf( self::t( 'per_run_second' ), self::format_usd( $price ) ), $note );
-			case 'cpt':
-				return self::result( null, true, self::t( 'by_tokens' ), '' !== $note ? $note : self::t( 'task_note' ) );
-			case 'cp-readoutput':
+			case 'per-total-token':
+				return self::result( null, true, sprintf( self::t( 'per_token' ), self::format_usd( $price ) ), '' !== $note ? $note : self::t( 'task_note' ) );
+			case 'reported-price':
 				return $price > 0
 					? self::result( $price, true, sprintf( self::t( 'about' ), self::format_usd( $price ) ), '' !== $note ? $note : self::t( 'task_note' ) )
 					: self::result( null, true, self::t( 'set_when_ends' ), '' !== $note ? $note : self::t( 'task_note' ) );
