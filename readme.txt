@@ -4,7 +4,7 @@ Tags: ai, featured image, alt text, image generator, text to speech
 Requires at least: 6.6
 Tested up to: 7.1
 Requires PHP: 7.4
-Stable tag: 1.1.0
+Stable tag: 1.1.1
 License: GPLv2 or later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
@@ -149,6 +149,11 @@ Wiro AI privacy policy: https://wiro.ai/agreement/privacy-policy
 
 == Changelog ==
 
+= 1.1.1 =
+* Prices follow Wiro AI's renamed price methods, including the new price per second of input video.
+* The price line names each price's unit: per prompt character, per output file, per second of input audio or video, per second of output video, per input and output token.
+* Model menus show the unit of a per-second price instead of an approximate total.
+
 = 1.1.0 =
 * Image tools on Image blocks and in the Media Library: edit with a prompt, upscale, remove the background, write alt text.
 * Narration: read a post aloud with a text-to-speech model and add an audio player.
@@ -162,6 +167,9 @@ Wiro AI privacy policy: https://wiro.ai/agreement/privacy-policy
 * First release: featured image panel, Wiro AI Image block, settings page with a connection check.
 
 == Upgrade Notice ==
+
+= 1.1.1 =
+Prices work with Wiro AI's renamed price methods.
 
 = 1.1.0 =
 Adds image editing, upscaling, background removal, alt text, narration, SEO suggestions, bulk featured images and usage history.
